@@ -1,0 +1,292 @@
+{
+  "name": "My workflow 7",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-medical-record",
+        "responseMode": "lastNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        500,
+        0
+      ],
+      "id": "be14034c-7075-4376-be95-1e8b21a9a83c",
+      "name": "Webhook",
+      "webhookId": "5e0fbf15-2c15-438c-9de3-2b4229a73c2e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "K89388625688957"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file0"
+            },
+            {
+              "name": "language",
+              "value": "eng"
+            },
+            {
+              "name": "isOverlayRequired",
+              "value": "false"
+            },
+            {
+              "name": "filetype",
+              "value": "pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        680,
+        0
+      ],
+      "id": "9c1d0cae-8ca3-4974-8af8-9eaca6575185",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        860,
+        0
+      ],
+      "id": "52f36a9f-fa36-45c9-a153-59d35259b677",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.ParsedResults[0].ParsedText }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "name",
+              "description": "Extract the patient’s full name following \"Patient Name:\" in the text."
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "description": "Extract the patient’s age appearing after \"Age:\" in the text."
+            },
+            {
+              "name": "symptoms",
+              "description": "Extract the list of symptoms mentioned under \"Symptoms:\" until next section"
+            },
+            {
+              "name": "diagnosis",
+              "description": "Extract the diagnosis information under \"Diagnosis:\"."
+            },
+            {
+              "name": "treatment",
+              "description": "Extract the treatment details listed after \"Treatment:\"."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a49d8e04-2fbf-4fb6-81ef-f05b29c04fb6",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        180
+      ],
+      "id": "15ba5dd0-d0d4-4133-aaa6-41a8f4ead7d2",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PRnc1zNNoUCDYw2x",
+          "name": "Google Gemini(PaLM) Api account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional medical assistant AI. Based on the following medical record, write a short and clear email summary for the patient. Include:\n\n- Subject line with the date of visit (use June 28, 2025)\n- Polite greeting with patient’s name (John Doe)\n- Brief summary of key potential health issues\n- Recommended diagnostic tests\n- Next steps or follow-up info\n- Note any important missing information\n- Polite closing with sender’s title (Medical Assistant)\n- Include the line: \"---\\nThis email was sent automatically with n8n\\nhttps://n8n.io\"\n\nMedical record details:  \n{{ $('Edit Fields').item.json.ParsedResults[0].ParsedText }}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        0
+      ],
+      "id": "3198016e-d17b-4cc0-8b9b-2ed0992f175f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        180
+      ],
+      "id": "c90c8c4c-303c-46a4-a3c4-884ae4e2ce1f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PRnc1zNNoUCDYw2x",
+          "name": "Google Gemini(PaLM) Api account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "rajasri.r.cse.2023@snsce.ac.in",
+        "subject": "medical report",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1660,
+        0
+      ],
+      "id": "f4fd7661-05cb-4ef1-8643-49a0cae94d8f",
+      "name": "Send a message",
+      "webhookId": "ff35634e-ad11-4156-9eb7-3dbc896e0309",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "P4pZ1lXJl5XeK4M5",
+          "name": "Gmail account 6"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "87449565-b236-406e-8727-6ed4ddd93d32",
+  "meta": {
+    "instanceId": "d2059035bcad15d44b28e07931e92f9b05e079e988fdfbdc0634a9a7129d6045"
+  },
+  "id": "2wYG8KDUGiME6P61",
+  "tags": []
+}
